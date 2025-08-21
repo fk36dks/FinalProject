@@ -6,4 +6,4 @@ resources:
 - service.yaml
 images:
 - name: docker.io/fk36dks/finalproject
-  newTag: 1.0-4-7449b2d
+  newTag: 1.0-5-cc27fdb
