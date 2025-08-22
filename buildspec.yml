@@ -1,0 +1,24 @@
+version: 0.2
+env:
+  variables:
+    IMAGE_TAG: v1
+    REPO_WEB: shop/web
+    REPO_API: shop/api
+    GITHUB_URL: https://github.com/fk36dks/FinalProject.git
+phases:
+  pre_build:
+    commands:
+      - echo "Clone source"
+      - git clone $GITHUB_URL src
+      - cd src
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPO_WEB:$IMAGE_TAG web
+      - docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPO_API:$IMAGE_TAG api
+  post_build:
+    commands:
+      - docker push $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPO_WEB:$IMAGE_TAG
+      - docker push $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPO_API:$IMAGE_TAG
+
