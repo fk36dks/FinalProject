@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-backend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shop-backend
+  template:
+    metadata:
+      labels:
+        app: shop-backend
+    spec:
+      containers:
+      - name: backend
+        image: fk36dks/shop-backend:latest
+        env:
+        - name: DB_HOST
+          value: "10.0.2.75"
+        - name: DB_USER
+          value: "shopuser"
+        - name: DB_PASS
+          value: "soldesk901!"
+        - name: DB_NAME
+          value: "shop"
+        ports:
+        - containerPort: 8080
+

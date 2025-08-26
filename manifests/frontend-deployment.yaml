@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-frontend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shop-frontend
+  template:
+    metadata:
+      labels:
+        app: shop-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: fk36dks/shop-frontend:latest
+        ports:
+        - containerPort: 80
+
