@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+  environment {
+    DOCKER_REPO = "fk36dks/shop-backend"
+  }
+  stages {
+    stage('Build') {
+      steps {
+        sh 'docker build -t $DOCKER_REPO:${BUILD_NUMBER} ./backend'
+      }
+    }
+    stage('Push') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+          sh 'docker push $DOCKER_REPO:${BUILD_NUMBER}'
+        }
+      }
+    }
+    stage('Update Manifests') {
+      steps {
+        sh '''
+          cd manifests
+          sed -i "s|image: .*shop-backend:.*|image: $DOCKER_REPO:${BUILD_NUMBER}|" backend-deployment.yaml
+          git config user.email "ci-bot@finalproject.com"
+          git config user.name "jenkins-bot"
+          git add backend-deployment.yaml
+          git commit -m "update backend image to ${BUILD_NUMBER}" || true
+          git push origin main
+        '''
+      }
+    }
+  }
+}
+
