@@ -1,14 +1,17 @@
 pipeline {
   agent any
+
   environment {
     DOCKER_REPO = "fk36dks/shop-backend"
   }
+
   stages {
     stage('Build') {
       steps {
         sh 'docker build -t $DOCKER_REPO:${BUILD_NUMBER} ./backend'
       }
     }
+
     stage('Push') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -17,17 +20,42 @@ pipeline {
         }
       }
     }
+
     stage('Update Manifests') {
       steps {
-        sh '''
-          cd manifests
-          sed -i "s|image: .*shop-backend:.*|image: $DOCKER_REPO:${BUILD_NUMBER}|" backend-deployment.yaml
-          git config user.email "ci-bot@finalproject.com"
-          git config user.name "jenkins-bot"
-          git add backend-deployment.yaml
-          git commit -m "update backend image to ${BUILD_NUMBER}" || true
-          git push origin main
-        '''
+        dir('manifests') {
+          withCredentials([usernamePassword(credentialsId: 'github-https', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+            sh '''
+              set -euxo pipefail
+
+              # Ensure HTTPS remote (push uses PAT)
+              git remote set-url origin https://github.com/fk36dks/FinalProject.git
+
+              # Fix detached HEAD: create/sync local main from remote main
+              git fetch --all --prune
+              git checkout -B main origin/main
+
+              # Update image tag in manifest
+              sed -i "s|image: .*shop-backend:.*|image: $DOCKER_REPO:${BUILD_NUMBER}|" backend-deployment.yaml
+
+              # Commit metadata
+              git config user.email "ci-bot@finalproject.com"
+              git config user.name "jenkins-bot"
+
+              # Commit only if there are changes
+              git add backend-deployment.yaml
+              if ! git diff --cached --quiet; then
+                git commit -m "update backend image to ${BUILD_NUMBER}"
+              else
+                echo "No changes to commit"
+              fi
+
+              # Rebase in case remote moved ahead, then push
+              git pull --rebase origin main || true
+              git push https://${GIT_USER}:${GIT_TOKEN}@github.com/fk36dks/FinalProject.git main
+            '''
+          }
+        }
       }
     }
   }
