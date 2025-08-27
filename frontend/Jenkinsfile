@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = "fk36dks/shop-frontend"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/fk36dks/FinalProject.git'
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                dir('frontend') {
+                    sh 'docker build -t $REGISTRY:latest .'
+                }
+            }
+        }
+
+        stage('Push Frontend Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker push $REGISTRY:latest'
+                }
+            }
+        }
+
+        stage('Update Manifests') {
+            steps {
+                dir('manifest') {
+                    sh '''
+                    sed -i "s|image:.*shop-frontend:.*|image: $REGISTRY:latest|" frontend-deployment.yaml
+                    '''
+                }
+                sh '''
+                git config user.email "ci@jenkins"
+                git config user.name "Jenkins"
+                git add manifest/frontend-deployment.yaml
+                git commit -m "Update frontend image to latest by Jenkins build $BUILD_NUMBER" || true
+                git push origin main
+                '''
+            }
+        }
+    }
+}
+
