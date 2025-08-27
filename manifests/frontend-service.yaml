@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: shop-frontend
-  namespace: finalproject-dev   # ✅ namespace 수정
+  namespace: finalproject-dev
 spec:
-  type: NodePort                # 외부에서 접근해야 하면 유지
+  type: NodePort
   selector:
     app: shop-frontend
   ports:
