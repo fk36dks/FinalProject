@@ -1,50 +1,79 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        REGISTRY = "fk36dks/shop-frontend"
+  environment {
+    DOCKER_REPO = "fk36dks/shop-frontend"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/fk36dks/FinalProject.git'
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/fk36dks/FinalProject.git'
-            }
-        }
+    stage('Build Frontend Image') {
+      steps {
+        dir('frontend') {
+          sh '''
+            # frontend 디렉토리에서 이미지 빌드
+            docker build -t $DOCKER_REPO:${BUILD_NUMBER} .
 
-        stage('Build Frontend Image') {
-            steps {
-                dir('frontend') {
-                    sh 'docker build -t $REGISTRY:latest .'
-                }
-            }
+            # latest 태그도 추가
+            docker tag $DOCKER_REPO:${BUILD_NUMBER} $DOCKER_REPO:latest
+          '''
         }
-
-        stage('Push Frontend Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push $REGISTRY:latest'
-                }
-            }
-        }
-
-        stage('Update Manifests') {
-            steps {
-                dir('manifests') {
-                    sh '''
-                    sed -i "s|image:.*shop-frontend:.*|image: $REGISTRY:latest|" frontend-deployment.yaml
-                    '''
-                }
-                sh '''
-                git config user.email "ci@jenkins"
-                git config user.name "Jenkins"
-                git add manifests/frontend-deployment.yaml
-                git commit -m "Update frontend image to latest by Jenkins build $BUILD_NUMBER" || true
-                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/fk36dks/FinalProject.git main
-                '''
-            }
-        }
+      }
     }
+
+    stage('Push Frontend Image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+            # 빌드넘버 태그와 latest 태그 모두 push
+            docker push $DOCKER_REPO:${BUILD_NUMBER}
+            docker push $DOCKER_REPO:latest
+          '''
+        }
+      }
+    }
+
+    stage('Update Manifests') {
+      steps {
+        dir('manifests') {
+          withCredentials([usernamePassword(credentialsId: 'github-https', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+            sh '''
+              set -euxo pipefail
+
+              # HTTPS remote (GitHub PAT 사용)
+              git remote set-url origin https://github.com/fk36dks/FinalProject.git
+              git fetch --all --prune
+              git checkout -B main origin/main
+
+              # frontend-deployment.yaml 의 image 라인 갱신
+              sed -i "s|image:.*shop-frontend:.*|image: $DOCKER_REPO:${BUILD_NUMBER}|" frontend-deployment.yaml
+
+              # 커밋 메타데이터
+              git config user.email "ci-bot@finalproject.com"
+              git config user.name "jenkins-bot"
+
+              git add frontend-deployment.yaml
+              if ! git diff --cached --quiet; then
+                git commit -m "update frontend image to ${BUILD_NUMBER}"
+              else
+                echo "No changes to commit"
+              fi
+
+              # rebase 후 push
+              git pull --rebase origin main || true
+              git push https://${GIT_USER}:${GIT_TOKEN}@github.com/fk36dks/FinalProject.git main
+            '''
+          }
+        }
+      }
+    }
+  }
 }
 
