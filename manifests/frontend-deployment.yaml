@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: fk36dks/shop-frontend:latest   # Jenkins에서 push한 이미지 사용
+          image: fk36dks/shop-frontend:11
           ports:
             - containerPort: 80
           env:
