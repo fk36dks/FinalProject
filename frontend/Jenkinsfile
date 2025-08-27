@@ -41,7 +41,7 @@ pipeline {
                 git config user.name "Jenkins"
                 git add manifests/frontend-deployment.yaml
                 git commit -m "Update frontend image to latest by Jenkins build $BUILD_NUMBER" || true
-                git push origin main
+                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/fk36dks/FinalProject.git main
                 '''
             }
         }
