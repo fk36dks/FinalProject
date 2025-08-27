@@ -2,13 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: shop-backend
-  namespace: default
+  namespace: finalproject-dev
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: shop-backend
   ports:
-  - port: 8080
-    targetPort: 8080
-    nodePort: 30081
+    - port: 5000
+      targetPort: 5000
 

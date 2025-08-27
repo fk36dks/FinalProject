@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: shop-frontend
-  namespace: finalproject-dev   # ✅ 여기 꼭 맞춰주기
+  namespace: finalproject-dev   # 프론트엔드도 backend와 동일한 네임스페이스
 spec:
   replicas: 1
   selector:
@@ -15,7 +15,10 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: fk36dks/shop-frontend:latest
+          image: fk36dks/shop-frontend:latest   # Jenkins에서 push한 이미지 사용
           ports:
             - containerPort: 80
+          env:
+            - name: REACT_APP_API_URL           # ✅ 프론트엔드에서 백엔드 API 호출 주소
+              value: "http://shop-backend.finalproject-dev.svc.cluster.local:5000"
 
