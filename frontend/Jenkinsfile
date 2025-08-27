@@ -31,7 +31,7 @@ pipeline {
 
         stage('Update Manifests') {
             steps {
-                dir('manifest') {
+                dir('manifests') {
                     sh '''
                     sed -i "s|image:.*shop-frontend:.*|image: $REGISTRY:latest|" frontend-deployment.yaml
                     '''
