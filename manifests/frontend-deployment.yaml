@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: shop-frontend
-  namespace: default
+  namespace: finalproject-dev   # ✅ 여기 꼭 맞춰주기
 spec:
   replicas: 1
   selector:
@@ -14,8 +14,8 @@ spec:
         app: shop-frontend
     spec:
       containers:
-      - name: frontend
-        image: fk36dks/shop-frontend:latest
-        ports:
-        - containerPort: 80
+        - name: frontend
+          image: fk36dks/shop-frontend:latest
+          ports:
+            - containerPort: 80
 
