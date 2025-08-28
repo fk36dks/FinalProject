@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: fk36dks/shop-frontend:11
+          image: fk36dks/shop-frontend:2
           ports:
             - containerPort: 80
           env:
