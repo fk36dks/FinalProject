@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: fk36dks/shop-backend:3
+        image: 335507813633.dkr.ecr.ap-northeast-2.amazonaws.com/shop-backend:2
           ports:
             - containerPort: 5000   # 8080 대신 5000
 
